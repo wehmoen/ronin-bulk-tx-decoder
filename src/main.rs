@@ -3,6 +3,7 @@ extern crate fstrings;
 
 use std::fs;
 use futures::stream::{StreamExt};
+use indicatif::{ProgressBar, ProgressStyle};
 
 use mongodb::{
     bson::DateTime,
@@ -94,15 +95,26 @@ async fn main() {
             let txs_num = &collection.count_documents(doc! {"from": address.clone().to_lowercase().trim()}, count_options.clone()).await.unwrap();
             let mut txs = collection.find(doc! {"from": address.clone().to_lowercase().trim()}, find_options.clone()).await.unwrap();
 
+            let bar = ProgressBar::new(*txs_num);
+
+            bar.set_style(
+                ProgressStyle::default_spinner().template("{spinner}{bar:80.cyan/blue} {percent:>3}% | [{eta_precise}][{elapsed_precise}] ETA/Elapsed | {msg}{pos:>5}/{len:4}").unwrap()
+            );
+
             println!("Processing {} with {} txs", &address.to_lowercase().trim(), txs_num);
 
             while let Some(tx) = txs.next().await {
                 let tx = tx.unwrap().hash;
+                bar.set_message(f!("Decoding: {}", tx.clone()));
 
                 let decoded = get_tx(&http_client, tx).await;
 
                 address_output.tx.push(decoded);
+                bar.inc(1);
             }
+
+            bar.set_position(*txs_num);
+            bar.finish();
 
             final_output.push(address_output);
 
