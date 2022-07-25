@@ -75,6 +75,8 @@ async fn main() {
 
     let addresses: Vec<String> = fs::read_to_string("./addresses.txt").unwrap_or("".to_string()).split(LINE_ENDING).map(str::to_string).collect();
 
+    fs::create_dir_all("./output").ok();
+
     let pb_global = multi.add(ProgressBar::new(addresses.len() as u64));
     pb_global.set_style(style.clone());
 
@@ -120,12 +122,12 @@ async fn main() {
             pb_task.set_position(*txs_num);
             pb_task.finish();
 
-            final_output.push(address_output);
+            fs::write(f!("./output/{address}.json"), serde_json::to_string(&address_output).unwrap()).ok();
+
             pb_global.inc(1);
         }
 
-        fs::write("output.json", serde_json::to_string(&final_output).unwrap()).ok();
-        print!("Saved output to output.json!");
+        print!("Saved output to ./output!");
     } else {
         println!("No addresses found!")
     }
