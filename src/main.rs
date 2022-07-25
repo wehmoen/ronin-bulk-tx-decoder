@@ -120,12 +120,14 @@ async fn main() {
             }
 
             pb_task.set_position(*txs_num);
-            pb_task.finish();
+            pb_task.finish_and_clear();
 
             fs::write(f!("./output/{address}.json"), serde_json::to_string(&address_output).unwrap()).ok();
 
             pb_global.inc(1);
         }
+
+        pb_global.finish();
 
         print!("Saved output to ./output!");
     } else {
