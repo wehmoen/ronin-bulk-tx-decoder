@@ -97,6 +97,13 @@ async fn main() {
         for address in addresses {
             pb_global.set_message(format!("Processing {}", address.clone()));
 
+            let file_name = f!("./output/{address}.json");
+
+            if std::path::Path::new(&file_name).exists() {
+                pb_global.inc(1);
+                continue;
+            }
+
             let mut address_output: AddressDict = AddressDict {
                 address: address.clone(),
                 tx: vec![],
@@ -122,7 +129,7 @@ async fn main() {
             pb_task.set_position(*txs_num);
             pb_task.finish_and_clear();
 
-            fs::write(f!("./output/{address}.json"), serde_json::to_string(&address_output).unwrap()).ok();
+            fs::write(file_name, serde_json::to_string(&address_output).unwrap()).ok();
 
             pb_global.inc(1);
         }
@@ -133,5 +140,4 @@ async fn main() {
     } else {
         println!("No addresses found!")
     }
-
 }
